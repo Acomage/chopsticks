@@ -11,7 +11,7 @@ from ..core.package import Package
 
 
 def _ensure_core_alias() -> None:
-    # Handled in configmgr.__init__, but ensure alias exists when loader is used standalone
+    # Handled in chopsticks.__init__, but ensure alias exists when loader is used standalone
     if "core" not in sys.modules:
         import importlib
 
@@ -43,3 +43,4 @@ def load_package(name: str) -> Package:
     if not isinstance(obj, Package):
         raise InvalidPackageError(f"{pkg_file} must define `pkg: Package`")
     return obj
+

@@ -9,7 +9,7 @@ from ..core.state import State
 from ..repo.loader import load_package
 
 
-def cmd_list(args: argparse.Namespace) -> int:
+def cmd_list(_: argparse.Namespace) -> int:
     st = State()
     st.load()
     if not st.installed:
@@ -156,7 +156,7 @@ def cmd_update(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="configmgr", description="Lightweight config/package manager"
+        prog="chopsticks", description="Chopsticks, help you for your rice"
     )
     sub = p.add_subparsers(dest="command")
     p.add_argument(
@@ -188,4 +188,3 @@ def main(argv: List[str] | None = None) -> int:
         parser.print_help()
         return 2
     return int(args.func(args) or 0)
-
