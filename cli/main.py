@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 from typing import List
 
-from ..config import DRY_RUN
 from ..core.depsolver import resolve_install_order, resolve_uninstall_order
 from ..core.executor import Executor
 from ..core.state import State
@@ -33,19 +32,27 @@ def cmd_install(args: argparse.Namespace) -> int:
     def lookup(n: str):
         return load_package(n)
 
-    plan = resolve_install_order(targets, lookup, {k: v.version for k, v in st.installed.items()})
+    plan = resolve_install_order(
+        targets, lookup, {k: v.version for k, v in st.installed.items()}
+    )
     if not plan:
         print("All targets are up-to-date.")
         return 0
 
     ex = Executor()
     for pkg, op in plan:
-        print(f"Installing {pkg.name}-{pkg.version}" if op == "install" else f"Updating {pkg.name}-{pkg.version}")
+        print(
+            f"Installing {pkg.name}-{pkg.version}"
+            if op == "install"
+            else f"Updating {pkg.name}-{pkg.version}"
+        )
         actions = pkg.install if op == "install" else pkg.update
-        if DRY_RUN:
+        if args.dry_run:
             for a in actions:
-                print(f"  DRY-RUN: {a.__class__.__name__} -> {getattr(a, 'describe', lambda: '')()}")
-            st.mark_installed(pkg.name, pkg.version)
+                print(
+                    f"  DRY-RUN: {a.__class__.__name__} -> {getattr(a, 'describe', lambda: '')()}"
+                )
+            # st.mark_installed(pkg.name, pkg.version)
             continue
         ok, msg = ex.run(actions)
         if not ok:
@@ -84,10 +91,12 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
     for pkg, _ in plan:
         print(f"Uninstalling {pkg.name}-{installed[pkg.name]}")
         actions = pkg.uninstall
-        if DRY_RUN:
+        if args.dry_run:
             for a in actions:
-                print(f"  DRY-RUN: {a.__class__.__name__} -> {getattr(a, 'describe', lambda: '')()}")
-            st.mark_uninstalled(pkg.name)
+                print(
+                    f"  DRY-RUN: {a.__class__.__name__} -> {getattr(a, 'describe', lambda: '')()}"
+                )
+            # st.mark_uninstalled(pkg.name)
             continue
         ok, msg = ex.run(actions)
         if not ok:
@@ -111,7 +120,9 @@ def cmd_update(args: argparse.Namespace) -> int:
     def lookup(n: str):
         return load_package(n)
 
-    plan = resolve_install_order(targets, lookup, {k: v.version for k, v in st.installed.items()})
+    plan = resolve_install_order(
+        targets, lookup, {k: v.version for k, v in st.installed.items()}
+    )
     # Filter only updates (or installs if not installed to get on latest)
     plan = [(p, op) for (p, op) in plan if op in ("update", "install")]
     if not plan:
@@ -120,12 +131,18 @@ def cmd_update(args: argparse.Namespace) -> int:
 
     ex = Executor()
     for pkg, op in plan:
-        print(f"Updating {pkg.name}-{pkg.version}" if op == "update" else f"Installing {pkg.name}-{pkg.version}")
+        print(
+            f"Updating {pkg.name}-{pkg.version}"
+            if op == "update"
+            else f"Installing {pkg.name}-{pkg.version}"
+        )
         actions = pkg.update if op == "update" else pkg.install
-        if DRY_RUN:
+        if args.dry_run:
             for a in actions:
-                print(f"  DRY-RUN: {a.__class__.__name__} -> {getattr(a, 'describe', lambda: '')()}")
-            st.mark_installed(pkg.name, pkg.version)
+                print(
+                    f"  DRY-RUN: {a.__class__.__name__} -> {getattr(a, 'describe', lambda: '')()}"
+                )
+            # st.mark_installed(pkg.name, pkg.version)
             continue
         ok, msg = ex.run(actions)
         if not ok:
@@ -138,8 +155,13 @@ def cmd_update(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="configmgr", description="Lightweight config/package manager")
+    p = argparse.ArgumentParser(
+        prog="configmgr", description="Lightweight config/package manager"
+    )
     sub = p.add_subparsers(dest="command")
+    p.add_argument(
+        "--dry-run", action="store_true", help="Print actions without executing"
+    )
 
     sp_list = sub.add_parser("list", help="List installed packages")
     sp_list.set_defaults(func=cmd_list)
@@ -166,3 +188,4 @@ def main(argv: List[str] | None = None) -> int:
         parser.print_help()
         return 2
     return int(args.func(args) or 0)
+
