@@ -15,7 +15,7 @@ def _ensure_core_alias() -> None:
     if "core" not in sys.modules:
         import importlib
 
-        core_pkg: ModuleType = importlib.import_module("configmgr.core")
+        core_pkg: ModuleType = importlib.import_module("chopsticks.core")
         sys.modules["core"] = core_pkg
 
 
@@ -43,4 +43,3 @@ def load_package(name: str) -> Package:
     if not isinstance(obj, Package):
         raise InvalidPackageError(f"{pkg_file} must define `pkg: Package`")
     return obj
-
