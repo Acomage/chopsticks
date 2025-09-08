@@ -110,12 +110,16 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
 
 def cmd_update(args: argparse.Namespace) -> int:
     targets: List[str] = args.packages
-    if not targets:
-        print("Nothing to update.")
-        return 0
 
     st = State()
     st.load()
+
+    # When no explicit targets provided, update all installed packages
+    if not targets:
+        targets = sorted(st.installed.keys())
+        if not targets:
+            print("No packages installed.")
+            return 0
 
     def lookup(n: str):
         return load_package(n)
@@ -175,7 +179,8 @@ def build_parser() -> argparse.ArgumentParser:
     sp_un.set_defaults(func=cmd_uninstall)
 
     sp_up = sub.add_parser("update", help="Update packages to latest")
-    sp_up.add_argument("packages", nargs="+", help="Package names")
+    # Accept zero or more packages; when zero, update all installed
+    sp_up.add_argument("packages", nargs="*", help="Package names")
     sp_up.set_defaults(func=cmd_update)
 
     return p
