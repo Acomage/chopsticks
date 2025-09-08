@@ -255,6 +255,62 @@ class AppendFile(Action):
             pass
 
 
+class EnsureLinePresent(Action):
+    """Ensure a line exists somewhere in the file; append if missing.
+
+    - Idempotent: does nothing if the exact line already exists (compared without trailing newline).
+    - Rollback: if the action appended the line, remove the last occurrence.
+    """
+
+    def __init__(self, path: str | Path, line: str) -> None:
+        self.path = Path(path)
+        self.line = line.rstrip("\n")
+        self._appended = False
+
+    def check(self) -> bool:
+        content = read_text(self.path)
+        if content is None:
+            return True
+        for ln in content.splitlines():
+            if ln == self.line:
+                return False
+        return True
+
+    def run(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            content = read_text(self.path)
+        except Exception:
+            content = None
+        if content is None or content == "":
+            new_content = self.line + "\n"
+        else:
+            # ensure file ends with newline before appending
+            if not content.endswith("\n"):
+                new_content = content + "\n" + self.line + "\n"
+            else:
+                new_content = content + self.line + "\n"
+        atomic_write(self.path, new_content.encode("utf-8"))
+        self._appended = True
+
+    def rollback(self) -> None:
+        if not self._appended:
+            return
+        try:
+            content = read_text(self.path)
+            if content is None:
+                return
+            lines = content.splitlines()
+            # remove the last occurrence of the line we appended
+            for i in range(len(lines) - 1, -1, -1):
+                if lines[i] == self.line:
+                    del lines[i]
+                    break
+            atomic_write(self.path, ("\n".join(lines) + ("\n" if lines else "")).encode("utf-8"))
+        except Exception:
+            pass
+
+
 class RemoveLastLine(Action):
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
@@ -278,6 +334,52 @@ class RemoveLastLine(Action):
     def rollback(self) -> None:
         if self._changed and self._backup is not None:
             atomic_write(self.path, self._backup.encode("utf-8"))
+
+
+class EnsureLineAbsent(Action):
+    """Ensure a specific line is absent from the file; remove if present.
+
+    By default removes all occurrences of the exact line (without trailing newline).
+    """
+
+    def __init__(self, path: str | Path, line: str, remove_all: bool = True) -> None:
+        self.path = Path(path)
+        self.line = line.rstrip("\n")
+    self.remove_all = remove_all
+    self._backup: Optional[str] = None
+
+    def check(self) -> bool:
+        content = read_text(self.path)
+        if content is None:
+            return False
+        return any(ln == self.line for ln in content.splitlines())
+
+    def run(self) -> None:
+        content = read_text(self.path)
+        if content is None:
+            return
+        self._backup = content
+        lines = content.splitlines()
+        if self.remove_all:
+            new_lines = [ln for ln in lines if ln != self.line]
+        else:
+            # remove only the last occurrence
+            new_lines = lines[:]
+            for i in range(len(new_lines) - 1, -1, -1):
+                if new_lines[i] == self.line:
+                    del new_lines[i]
+                    break
+        if new_lines == lines:
+            return
+        atomic_write(self.path, ("\n".join(new_lines) + ("\n" if new_lines else "")).encode("utf-8"))
+
+    def rollback(self) -> None:
+        if self._backup is None:
+            return
+        try:
+            atomic_write(self.path, self._backup.encode("utf-8"))
+        except Exception:
+            pass
 
 
 # -------- System / Firewall actions --------
@@ -345,5 +447,150 @@ class UfwDeny(Action):
     def rollback(self) -> None:
         try:
             run_ufw("delete", f"deny {self.spec}")
+        except Exception:
+            pass
+
+
+class EnsureBlockPresent(Action):
+    """Ensure a managed block (between BEGIN/END markers) exists and equals given content.
+
+    The block is marked by lines like:
+      <prefix> BEGIN MANAGED:{key}
+      ...content...
+      <prefix> END MANAGED:{key}
+
+    - Idempotent: if existing block content equals, do nothing.
+    - If block exists but differs: replace the block.
+    - If block doesn't exist: append the block at end (with a leading newline when needed).
+    - Rollback: restore the original file content.
+    """
+
+    def __init__(self, path: str | Path, key: str, content: str, comment_prefix: str = "#") -> None:
+        self.path = Path(path)
+        self.key = key
+        self.content = content.rstrip("\n")
+        self.prefix = comment_prefix
+        self._existed = False
+        self._backup: Optional[str] = None
+
+    def _find_block(self, text: str) -> tuple[int, int] | None:
+        begin = f"{self.prefix} BEGIN MANAGED:{self.key}"
+        end = f"{self.prefix} END MANAGED:{self.key}"
+        lines = text.splitlines()
+        start_idx = -1
+        for i, ln in enumerate(lines):
+            if ln.strip() == begin:
+                start_idx = i
+                break
+        if start_idx == -1:
+            return None
+        for j in range(start_idx + 1, len(lines)):
+            if lines[j].strip() == end:
+                return start_idx, j
+        # malformed (begin without end) -> treat as no block
+        return None
+
+    def check(self) -> bool:
+        cur = read_text(self.path)
+        if cur is None:
+            return True
+        rng = self._find_block(cur)
+        if rng is None:
+            return True
+        i, j = rng
+        lines = cur.splitlines()
+        current_block = "\n".join(lines[i + 1 : j]).rstrip("\n")
+        return current_block != self.content
+
+    def run(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        cur = read_text(self.path)
+        if cur is None:
+            cur = ""
+            self._existed = False
+        else:
+            self._existed = True
+        self._backup = cur
+
+        begin = f"{self.prefix} BEGIN MANAGED:{self.key}"
+        end = f"{self.prefix} END MANAGED:{self.key}"
+        lines = cur.splitlines()
+        rng = self._find_block(cur)
+        block_lines = [begin, *self.content.splitlines(), end]
+
+        if rng is None:
+            # append block to end, keep one trailing newline
+            if cur and not cur.endswith("\n"):
+                new_text = cur + "\n" + "\n".join(block_lines) + "\n"
+            else:
+                new_text = cur + ("" if cur.endswith("\n") else "") + "\n".join(block_lines) + "\n"
+        else:
+            i, j = rng
+            new_lines = lines[:i] + block_lines + lines[j + 1 :]
+            new_text = "\n".join(new_lines) + "\n"
+
+        atomic_write(self.path, new_text.encode("utf-8"))
+
+    def rollback(self) -> None:
+        if self._backup is None:
+            return
+        try:
+            atomic_write(self.path, self._backup.encode("utf-8"))
+        except Exception:
+            pass
+
+
+class EnsureBlockAbsent(Action):
+    """Ensure a managed block (BEGIN/END markers) for the given key is absent.
+
+    If the block exists, remove it. Otherwise, do nothing. Rollback restores the original file.
+    """
+
+    def __init__(self, path: str | Path, key: str, comment_prefix: str = "#") -> None:
+        self.path = Path(path)
+        self.key = key
+        self.prefix = comment_prefix
+        self._backup: Optional[str] = None
+
+    def _find_block(self, text: str) -> tuple[int, int] | None:
+        begin = f"{self.prefix} BEGIN MANAGED:{self.key}"
+        end = f"{self.prefix} END MANAGED:{self.key}"
+        lines = text.splitlines()
+        start_idx = -1
+        for i, ln in enumerate(lines):
+            if ln.strip() == begin:
+                start_idx = i
+                break
+        if start_idx == -1:
+            return None
+        for j in range(start_idx + 1, len(lines)):
+            if lines[j].strip() == end:
+                return start_idx, j
+        return None
+
+    def check(self) -> bool:
+        cur = read_text(self.path)
+        if cur is None:
+            return False
+        return self._find_block(cur) is not None
+
+    def run(self) -> None:
+        cur = read_text(self.path)
+        if cur is None:
+            return
+        self._backup = cur
+        lines = cur.splitlines()
+        rng = self._find_block(cur)
+        if rng is None:
+            return
+        i, j = rng
+        new_lines = lines[:i] + lines[j + 1 :]
+        atomic_write(self.path, ("\n".join(new_lines) + ("\n" if new_lines else "")).encode("utf-8"))
+
+    def rollback(self) -> None:
+        if self._backup is None:
+            return
+        try:
+            atomic_write(self.path, self._backup.encode("utf-8"))
         except Exception:
             pass
