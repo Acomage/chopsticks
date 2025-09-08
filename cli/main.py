@@ -22,9 +22,9 @@ def cmd_list(_: argparse.Namespace) -> int:
 
 def cmd_install(args: argparse.Namespace) -> int:
     targets: List[str] = args.packages
-    if not targets:
-        print("Nothing to install.")
-        return 0
+    # if not targets:
+    #     print("Nothing to install.")
+    #     return 0
 
     st = State()
     st.load()
@@ -66,9 +66,9 @@ def cmd_install(args: argparse.Namespace) -> int:
 
 def cmd_uninstall(args: argparse.Namespace) -> int:
     targets: List[str] = args.packages
-    if not targets:
-        print("Nothing to uninstall.")
-        return 0
+    # if not targets:
+    #     print("Nothing to uninstall.")
+    #     return 0
 
     st = State()
     st.load()
