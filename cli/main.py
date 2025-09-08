@@ -29,11 +29,14 @@ def cmd_install(args: argparse.Namespace) -> int:
     st = State()
     st.load()
 
-    def lookup(n: str):
-        return load_package(n)
-
+    # def lookup(n: str):
+    #     return load_package(n)
+    #
+    # plan = resolve_install_order(
+    #     targets, lookup, {k: v.version for k, v in st.installed.items()}
+    # )
     plan = resolve_install_order(
-        targets, lookup, {k: v.version for k, v in st.installed.items()}
+        targets, load_package, {k: v.version for k, v in st.installed.items()}
     )
     if not plan:
         print("All targets are up-to-date.")

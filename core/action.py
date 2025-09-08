@@ -14,16 +14,13 @@ from ..utils.sysutils import run_systemctl, run_ufw
 
 class Action(ABC):
     @abstractmethod
-    def check(self) -> bool:
-        ...
+    def check(self) -> bool: ...
 
     @abstractmethod
-    def run(self) -> None:
-        ...
+    def run(self) -> None: ...
 
     @abstractmethod
-    def rollback(self) -> None:
-        ...
+    def rollback(self) -> None: ...
 
     def describe(self) -> str:
         return self.__class__.__name__
@@ -133,7 +130,9 @@ class CreateFile(Action):
     def rollback(self) -> None:
         try:
             if self._existed:
-                atomic_write(self.path, (self._backup or "").encode("utf-8"), mode=self.mode)
+                atomic_write(
+                    self.path, (self._backup or "").encode("utf-8"), mode=self.mode
+                )
             else:
                 if self.path.exists():
                     self.path.unlink(missing_ok=True)
@@ -250,7 +249,10 @@ class AppendFile(Action):
             lines = self.path.read_text(encoding="utf-8").splitlines()
             if lines and lines[-1] == self.line:
                 lines = lines[:-1]
-                atomic_write(self.path, ("\n".join(lines) + ("\n" if lines else "")).encode("utf-8"))
+                atomic_write(
+                    self.path,
+                    ("\n".join(lines) + ("\n" if lines else "")).encode("utf-8"),
+                )
         except Exception:
             pass
 
@@ -306,7 +308,9 @@ class EnsureLinePresent(Action):
                 if lines[i] == self.line:
                     del lines[i]
                     break
-            atomic_write(self.path, ("\n".join(lines) + ("\n" if lines else "")).encode("utf-8"))
+            atomic_write(
+                self.path, ("\n".join(lines) + ("\n" if lines else "")).encode("utf-8")
+            )
         except Exception:
             pass
 
@@ -328,7 +332,9 @@ class RemoveLastLine(Action):
         if not lines:
             return
         lines = lines[:-1]
-        atomic_write(self.path, ("\n".join(lines) + ("\n" if lines else "")).encode("utf-8"))
+        atomic_write(
+            self.path, ("\n".join(lines) + ("\n" if lines else "")).encode("utf-8")
+        )
         self._changed = True
 
     def rollback(self) -> None:
@@ -345,8 +351,8 @@ class EnsureLineAbsent(Action):
     def __init__(self, path: str | Path, line: str, remove_all: bool = True) -> None:
         self.path = Path(path)
         self.line = line.rstrip("\n")
-    self.remove_all = remove_all
-    self._backup: Optional[str] = None
+        self.remove_all = remove_all
+        self._backup: Optional[str] = None
 
     def check(self) -> bool:
         content = read_text(self.path)
@@ -371,7 +377,10 @@ class EnsureLineAbsent(Action):
                     break
         if new_lines == lines:
             return
-        atomic_write(self.path, ("\n".join(new_lines) + ("\n" if new_lines else "")).encode("utf-8"))
+        atomic_write(
+            self.path,
+            ("\n".join(new_lines) + ("\n" if new_lines else "")).encode("utf-8"),
+        )
 
     def rollback(self) -> None:
         if self._backup is None:
@@ -465,7 +474,9 @@ class EnsureBlockPresent(Action):
     - Rollback: restore the original file content.
     """
 
-    def __init__(self, path: str | Path, key: str, content: str, comment_prefix: str = "#") -> None:
+    def __init__(
+        self, path: str | Path, key: str, content: str, comment_prefix: str = "#"
+    ) -> None:
         self.path = Path(path)
         self.key = key
         self.content = content.rstrip("\n")
@@ -523,7 +534,12 @@ class EnsureBlockPresent(Action):
             if cur and not cur.endswith("\n"):
                 new_text = cur + "\n" + "\n".join(block_lines) + "\n"
             else:
-                new_text = cur + ("" if cur.endswith("\n") else "") + "\n".join(block_lines) + "\n"
+                new_text = (
+                    cur
+                    + ("" if cur.endswith("\n") else "")
+                    + "\n".join(block_lines)
+                    + "\n"
+                )
         else:
             i, j = rng
             new_lines = lines[:i] + block_lines + lines[j + 1 :]
@@ -585,7 +601,10 @@ class EnsureBlockAbsent(Action):
             return
         i, j = rng
         new_lines = lines[:i] + lines[j + 1 :]
-        atomic_write(self.path, ("\n".join(new_lines) + ("\n" if new_lines else "")).encode("utf-8"))
+        atomic_write(
+            self.path,
+            ("\n".join(new_lines) + ("\n" if new_lines else "")).encode("utf-8"),
+        )
 
     def rollback(self) -> None:
         if self._backup is None:
@@ -594,3 +613,4 @@ class EnsureBlockAbsent(Action):
             atomic_write(self.path, self._backup.encode("utf-8"))
         except Exception:
             pass
+
