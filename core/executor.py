@@ -71,3 +71,5 @@ class Executor:
                 continue
             if not query_before_action(act):
                 print(f"Skipping action: {act.describe()}")
+                continue
+            run_action(act)
