@@ -57,10 +57,7 @@ def cmd_install(args: argparse.Namespace) -> int:
                 )
             # st.mark_installed(pkg.name, pkg.version)
             continue
-        ok, msg = ex.run(actions)
-        if not ok:
-            print(msg)
-            return 1
+        ex.run(actions, args.no_confirm)
         st.mark_installed(pkg.name, pkg.version)
 
     st.save()
@@ -101,10 +98,7 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
                 )
             # st.mark_uninstalled(pkg.name)
             continue
-        ok, msg = ex.run(actions)
-        if not ok:
-            print(msg)
-            return 1
+        ex.run(actions, args.no_confirm)
         st.mark_uninstalled(pkg.name)
 
     st.save()
@@ -151,10 +145,7 @@ def cmd_update(args: argparse.Namespace) -> int:
                 )
             # st.mark_installed(pkg.name, pkg.version)
             continue
-        ok, msg = ex.run(actions)
-        if not ok:
-            print(msg)
-            return 1
+        ex.run(actions, args.no_confirm)
         st.mark_installed(pkg.name, pkg.version)
 
     st.save()
@@ -167,7 +158,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="command")
     p.add_argument(
-        "--dry-run", action="store_true", help="Print actions without executing"
+        "-d", "--dry-run", action="store_true", help="Print actions without executing"
     )
 
     sp_list = sub.add_parser("list", help="List installed packages")
@@ -175,15 +166,24 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp_install = sub.add_parser("install", help="Install packages")
     sp_install.add_argument("packages", nargs="+", help="Package names")
+    sp_install.add_argument(
+        "-y", "--no-confirm", action="store_true", help="Do not ask for confirmation"
+    )
     sp_install.set_defaults(func=cmd_install)
 
     sp_un = sub.add_parser("uninstall", help="Uninstall packages")
     sp_un.add_argument("packages", nargs="+", help="Package names")
+    sp_un.add_argument(
+        "-y", "--no-confirm", action="store_true", help="Do not ask for confirmation"
+    )
     sp_un.set_defaults(func=cmd_uninstall)
 
     sp_up = sub.add_parser("update", help="Update packages to latest")
     # Accept zero or more packages; when zero, update all installed
     sp_up.add_argument("packages", nargs="*", help="Package names")
+    sp_up.add_argument(
+        "-y", "--no-confirm", action="store_true", help="Do not ask for confirmation"
+    )
     sp_up.set_defaults(func=cmd_update)
 
     return p
