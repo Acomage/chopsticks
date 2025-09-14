@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 import shlex
 import subprocess
 from abc import ABC, abstractmethod
@@ -45,7 +46,7 @@ class RunCommand(Action):
         pass
 
     def describe(self) -> str:
-        return f"RunCommand({shlex.join(self.cmd)})"
+        return f"run command: {shlex.join(self.cmd)}"
 
 
 class RunShell(Action):
@@ -614,3 +615,23 @@ class EnsureBlockAbsent(Action):
         except Exception:
             pass
 
+
+class PacmanInstall(Action):
+    def __init__(self, packages: Sequence[str]) -> None:
+        self.packages = list(packages)
+
+    def check(self) -> bool:
+        return True
+
+    def run(self) -> None:
+        if not self.packages:
+            return
+        # cmd = ["sudo", "pacman", "-S", "--needed"] + self.packages
+        cmd = ["sudo", "pacman", "-S"] + self.packages
+        subprocess.run(cmd, check=True, env=SHELL_ENV)
+
+    def rollback(self) -> None:
+        pass
+
+    def describe(self) -> str:
+        return f"pacman install {', '.join(self.packages)}"

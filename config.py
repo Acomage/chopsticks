@@ -3,10 +3,14 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-REPO_DIR = Path("~/.config/chopsticks/repo/").expanduser().resolve()
+# REPO_DIR = Path("~/.config/chopsticks/repo/").expanduser().resolve()
+REPO_DIR = Path("~/workspace/chopsticks/rice/").expanduser().resolve()
 
 # State file path (installed packages)
 STATE_FILE = Path("~/.config/chopsticks/state.json").expanduser().resolve()
+
+# packages installed via package manager by chopsticks
+INSTALL_PACKAGR = Path("~/.config/chopsticks/package.txt").expanduser().resolve()
 
 # Config directory
 CONFIG_DIR = Path("~/.config/chopsticks/config").expanduser().resolve()
