@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import os
-import sys
 import shlex
 import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional, Sequence
 
-from ..config import SHELL_ENV
+from ..config import SHELL_ENV, INSTALL_PACKAGR
 from ..utils.fs import atomic_write, ensure_dir, is_link_to, read_text
 from ..utils.sysutils import run_systemctl, run_ufw
 
@@ -619,19 +618,111 @@ class EnsureBlockAbsent(Action):
 class PacmanInstall(Action):
     def __init__(self, packages: Sequence[str]) -> None:
         self.packages = list(packages)
+        self.need_to_install = []
+
+    def is_installed(self, pkg: str) -> bool:
+        cmd = ["pacman", "-Qq", pkg]
+        result = subprocess.run(cmd, capture_output=True, text=True, env=SHELL_ENV)
+        return result.stdout.strip() == pkg
 
     def check(self) -> bool:
-        return True
+        for pkg in self.packages:
+            if not self.is_installed(pkg):
+                self.need_to_install.append(pkg)
+        if self.need_to_install:
+            return True
+        return False
 
     def run(self) -> None:
         if not self.packages:
             return
-        # cmd = ["sudo", "pacman", "-S", "--needed"] + self.packages
-        cmd = ["sudo", "pacman", "-S"] + self.packages
-        subprocess.run(cmd, check=True, env=SHELL_ENV)
+        for pkg in self.need_to_install:
+            cmd = ["sudo", "pacman", "-S", "--needed", pkg]
+            subprocess.run(cmd, check=True, env=SHELL_ENV)
+            INSTALL_PACKAGR.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                content = read_text(INSTALL_PACKAGR)
+            except Exception:
+                content = None
+            if content is None or content == "":
+                new_content = pkg + "\n"
+            else:
+                # ensure file ends with newline before appending
+                if not content.endswith("\n"):
+                    new_content = content + "\n" + pkg + "\n"
+                else:
+                    new_content = content + pkg + "\n"
+            atomic_write(INSTALL_PACKAGR, new_content.encode("utf-8"))
 
     def rollback(self) -> None:
-        pass
+        try:
+            content = read_text(INSTALL_PACKAGR)
+        except Exception:
+            content = None
+        installed = content.splitlines() if content else []
+        for pkg in self.need_to_install:
+            if pkg in installed:
+                installed.remove(pkg)
+                cmd = ["sudo pacman", "-Rns", pkg]
+                subprocess.run(cmd, check=True, env=SHELL_ENV)
+        atomic_write(
+            INSTALL_PACKAGR,
+            ("\n".join(installed) + ("\n" if installed else "")).encode("utf-8"),
+        )
 
     def describe(self) -> str:
         return f"pacman install {', '.join(self.packages)}"
+
+
+class PacmanUninstall(Action):
+    def __init__(self, packages: Sequence[str]) -> None:
+        self.packages = list(packages)
+        self.need_to_remove = []
+
+    def check(self) -> bool:
+        try:
+            content = read_text(INSTALL_PACKAGR)
+        except Exception:
+            content = None
+        installed = content.splitlines() if content else []
+        for pkg in self.packages:
+            if pkg in installed:
+                self.need_to_remove.append(pkg)
+        return True if self.need_to_remove else False
+
+    def run(self) -> None:
+        for pkg in self.need_to_remove:
+            cmd = ["sudo", "pacman", "-Rns", pkg]
+            subprocess.run(cmd, check=True, env=SHELL_ENV)
+            try:
+                content = read_text(INSTALL_PACKAGR)
+            except Exception:
+                content = None
+            installed = content.splitlines() if content else []
+            if pkg in installed:
+                installed.remove(pkg)
+                atomic_write(
+                    INSTALL_PACKAGR,
+                    ("\n".join(installed) + ("\n" if installed else "")).encode(
+                        "utf-8"
+                    ),
+                )
+
+    def rollback(self) -> None:
+        try:
+            content = read_text(INSTALL_PACKAGR)
+        except Exception:
+            content = None
+        installed = content.splitlines() if content else []
+        for pkg in self.need_to_remove:
+            if pkg not in installed:
+                cmd = ["sudo", "pacman", "-S", "--needed", pkg]
+                subprocess.run(cmd, check=True, env=SHELL_ENV)
+                installed.append(pkg)
+        atomic_write(
+            INSTALL_PACKAGR,
+            ("\n".join(installed) + ("\n" if installed else "")).encode("utf-8"),
+        )
+
+    def describe(self) -> str:
+        return f"pacman uninstall {', '.join(self.packages)}"

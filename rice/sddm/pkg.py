@@ -5,7 +5,7 @@ pkg = Package(
     name="sddm",
     version="1.0.0",
     dependencies=[],
-    install=[PacmanInstall(["hyprland"])],
+    install=[PacmanInstall(["sddm"])],
     uninstall=[],
     update=[],
 )
