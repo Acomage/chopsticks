@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-from typing import Optional
 
 
 def have(cmd: str) -> bool:
@@ -19,3 +18,4 @@ def run_ufw(action: str, spec: str) -> None:
     if not have("ufw"):
         raise RuntimeError("ufw not found")
     subprocess.run(["ufw", action, spec], check=True, input=b"y\n")
+

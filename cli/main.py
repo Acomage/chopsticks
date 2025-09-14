@@ -22,19 +22,10 @@ def cmd_list(_: argparse.Namespace) -> int:
 
 def cmd_install(args: argparse.Namespace) -> int:
     targets: List[str] = args.packages
-    # if not targets:
-    #     print("Nothing to install.")
-    #     return 0
 
     st = State()
     st.load()
 
-    # def lookup(n: str):
-    #     return load_package(n)
-    #
-    # plan = resolve_install_order(
-    #     targets, lookup, {k: v.version for k, v in st.installed.items()}
-    # )
     plan = resolve_install_order(
         targets, load_package, {k: v.version for k, v in st.installed.items()}
     )
@@ -55,7 +46,6 @@ def cmd_install(args: argparse.Namespace) -> int:
                 print(
                     f"  DRY-RUN: {a.__class__.__name__} -> {getattr(a, 'describe', lambda: '')()}"
                 )
-            # st.mark_installed(pkg.name, pkg.version)
             continue
         ex.run(actions, args.no_confirm)
         st.mark_installed(pkg.name, pkg.version)
@@ -66,9 +56,6 @@ def cmd_install(args: argparse.Namespace) -> int:
 
 def cmd_uninstall(args: argparse.Namespace) -> int:
     targets: List[str] = args.packages
-    # if not targets:
-    #     print("Nothing to uninstall.")
-    #     return 0
 
     st = State()
     st.load()
@@ -78,11 +65,8 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
         print(f"Not installed: {', '.join(missing)}")
         return 1
 
-    def lookup(n: str):
-        return load_package(n)
-
     try:
-        plan = resolve_uninstall_order(targets, lookup, installed)
+        plan = resolve_uninstall_order(targets, load_package, installed)
     except Exception as e:
         print(str(e))
         return 1
@@ -96,7 +80,6 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
                 print(
                     f"  DRY-RUN: {a.__class__.__name__} -> {getattr(a, 'describe', lambda: '')()}"
                 )
-            # st.mark_uninstalled(pkg.name)
             continue
         ex.run(actions, args.no_confirm)
         st.mark_uninstalled(pkg.name)
@@ -111,18 +94,14 @@ def cmd_update(args: argparse.Namespace) -> int:
     st = State()
     st.load()
 
-    # When no explicit targets provided, update all installed packages
     if not targets:
         targets = sorted(st.installed.keys())
         if not targets:
             print("No packages installed.")
             return 0
 
-    def lookup(n: str):
-        return load_package(n)
-
     plan = resolve_install_order(
-        targets, lookup, {k: v.version for k, v in st.installed.items()}
+        targets, load_package, {k: v.version for k, v in st.installed.items()}
     )
     # Filter only updates (or installs if not installed to get on latest)
     plan = [(p, op) for (p, op) in plan if op in ("update", "install")]
@@ -143,7 +122,6 @@ def cmd_update(args: argparse.Namespace) -> int:
                 print(
                     f"  DRY-RUN: {a.__class__.__name__} -> {getattr(a, 'describe', lambda: '')()}"
                 )
-            # st.mark_installed(pkg.name, pkg.version)
             continue
         ex.run(actions, args.no_confirm)
         st.mark_installed(pkg.name, pkg.version)
