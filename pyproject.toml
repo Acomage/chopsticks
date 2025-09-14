@@ -1,7 +1,0 @@
-[project]
-name = "chopsticks"
-version = "0.0.1"
-description = "Help you for your rice"
-readme = "README.md"
-requires-python = ">=3.12"
-dependencies = []
