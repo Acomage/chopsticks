@@ -1,0 +1,86 @@
+:root {
+  --cc-bg: rgba(21, 21, 21, 0.7);
+  --noti-bg: 49, 50, 68; /* rgb值，方便 alpha */
+  --noti-bg-alpha: 0.55;
+  --noti-bg-hover: rgba(203, 166, 247, 0.3);
+  --noti-bg-focus: transparent;
+  --noti-border-color: rgba(217, 188, 239, 0.15);
+  --text-color: #d9bcef;
+  --text-color-disabled: rgb(150,150,150);
+  --bg-selected: linear-gradient(135deg, rgba(203,166,247,0.7), rgba(137,180,250,0.6));
+  --border-radius: 16px;
+  --border: 1px solid var(--noti-border-color);
+  --font-family: "Maple Mono Normal NF CN", monospace;
+  --font-size-body: 14px;
+  --font-size-summary: 15px;
+  --notification-icon-size: 64px;
+  --notification-app-icon-size: 24px;
+}
+
+/* 全局字体、颜色 */
+body, notificationwindow, blankwindow {
+  font-family: var(--font-family);
+  font-size: var(--font-size-body);
+  background: transparent;
+  color: var(--text-color);
+}
+
+/* 控制中心整体，加 Waybar 风格边框 */
+.control-center {
+  background: var(--cc-bg);
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(255, 255, 255, 0.08); /* 小透明边框 */
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3); /* 微弱阴影 */
+  color: var(--text-color);
+  padding: 6px;
+}
+
+/* 通知卡片 */
+.notification-row .notification-background .notification {
+  border-radius: var(--border-radius);
+  border: var(--border);
+  background: rgba(var(--noti-bg), var(--noti-bg-alpha));
+  transition: all 0.3s ease;
+}
+
+/* 通知 hover */
+.notification-row .notification-background .notification .notification-default-action:hover {
+  background: var(--noti-bg-hover);
+}
+
+.notification-row .notification-background .notification .notification-default-action:focus {
+  background: var(--noti-bg-focus);
+}
+
+/* Critical 通知 */
+.notification-row .notification-background .notification.critical {
+  border: 1px solid #f38ba8;
+  color: #f38ba8;
+}
+
+/* widget 部分（包括 Do Not Disturb / Notifications Title）——直接用统一背景 */
+.widget, 
+.widget-buttons-grid flowboxchild > button {
+  border-radius: var(--border-radius);
+  background: transparent;  /* 去掉卡片背景，直接融入 control-center 背景 */
+  color: var(--text-color);
+  transition: background 0.3s ease;
+}
+
+/* widget hover 时轻微提亮 */
+.widget:hover, 
+.widget-buttons-grid flowboxchild > button:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+/* 关闭按钮 */
+.close-button {
+  background: rgba(49,50,68,0.4);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+}
+
+.close-button:hover {
+  background: var(--noti-bg-hover);
+}

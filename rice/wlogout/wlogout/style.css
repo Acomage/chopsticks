@@ -1,0 +1,51 @@
+
+window {
+    background-color: transparent;
+}
+
+button {
+    border-radius: 20px;
+    border: none;
+    color: #f0eaff;
+    background: rgba(40, 30, 100, 0.6); /* 更蓝的基底 */
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 25%;
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    transition: background 0.35s ease,
+                box-shadow 0.45s ease,
+                background-size 0.35s ease,
+                transform 0.35s ease;
+}
+
+button:hover {
+    background: rgba(90, 60, 200, 0.75); /* 蓝紫色高亮 */
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 32%;
+    box-shadow: 0 0 18px rgba(120, 140, 255, 1),
+                0 0 36px rgba(120, 140, 255, 0.8),
+                0 0 64px rgba(120, 140, 255, 0.6);
+    outline: none;
+}
+
+/* 图标按钮位置 */
+#lock {
+    margin: 0px 10px 10px 350px;
+    background-image: image(url("/usr/share/wlogout/icons/lock.png"), url("/usr/local/share/wlogout/icons/lock.png"));
+}
+
+#logout {
+    margin: 10px 10px 0px 350px;
+    background-image: image(url("/usr/share/wlogout/icons/logout.png"), url("/usr/local/share/wlogout/icons/logout.png"));
+}
+
+#shutdown {
+    margin: 0px 350px 10px 10px;
+    background-image: image(url("/usr/share/wlogout/icons/shutdown.png"), url("/usr/local/share/wlogout/icons/shutdown.png"));
+}
+
+#reboot {
+    margin: 10px 350px 0px 10px;
+    background-image: image(url("/usr/share/wlogout/icons/reboot.png"), url("/usr/local/share/wlogout/icons/reboot.png"));
+}

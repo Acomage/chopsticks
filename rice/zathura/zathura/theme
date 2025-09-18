@@ -1,0 +1,44 @@
+# 默认背景与前景
+set default-bg                 rgba(24,24,28,1)      # 主背景 深灰
+set default-fg                 rgba(205,214,244,1)   # 主前景 浅灰
+
+# 状态栏
+set statusbar-bg               rgba(30,30,36,1)
+set statusbar-fg               rgba(137,220,235,1)   # 青色
+
+# 输入栏
+set inputbar-bg                rgba(30,30,36,1)
+set inputbar-fg                rgba(203,166,247,1)   # 紫色
+
+# 完成（补全菜单）
+set completion-bg              rgba(30,30,36,1)
+set completion-fg              rgba(205,214,244,1)
+set completion-highlight-bg    rgba(49,50,68,1)
+set completion-highlight-fg    rgba(137,220,235,1)
+set completion-group-bg        rgba(49,50,68,1)
+set completion-group-fg        rgba(203,166,247,1)
+
+# 通知
+set notification-bg            rgba(49,50,68,1)
+set notification-fg            rgba(205,214,244,1)
+set notification-warning-bg    rgba(49,50,68,1)
+set notification-warning-fg    rgba(249,226,175,1)   # 金色
+set notification-error-bg      rgba(49,50,68,1)
+set notification-error-fg      rgba(243,139,168,1)   # 粉红
+
+# 索引
+set index-bg                   rgba(24,24,28,1)
+set index-fg                   rgba(205,214,244,1)
+set index-active-bg            rgba(49,50,68,1)
+set index-active-fg            rgba(137,220,235,1)
+
+# 高亮（搜索结果等）
+set highlight-color            rgba(249,226,175,0.5) # 柔和金色
+set highlight-active-color     rgba(137,220,235,0.5) # 青色
+set highlight-fg               rgba(24,24,28,1)
+
+# 反色模式（夜间阅读）
+set recolor                    "true"
+set recolor-lightcolor         rgba(30,30,36,1)      # 背景深色
+set recolor-darkcolor          rgba(220,224,232,1)   # 文字浅色
+

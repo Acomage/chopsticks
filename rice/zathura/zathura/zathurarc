@@ -1,0 +1,3 @@
+set selection-clipboard clipboard
+set font "Maple Mono Normal NF CN"
+include theme
