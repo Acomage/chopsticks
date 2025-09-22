@@ -1,0 +1,34 @@
+sudo cachyos-rate-mirrors
+sudo pacman -Syu
+sudo pacman -Syu sddm hyprland kitty fuzzel swaync xdg-desktop-portal-hyprland hyprpolkitagent qt5-wayland qt6-wayland hyprpicker hyprpaper hypridle hyprlock hyprsunset
+sudo pacman -Syu dolphin kdeconnect systemsettings plasma-nm gwenview ark
+sudo pacman -Syu fish wl-clipboard cliphist trash-cli zoxide
+sudo pacman -Syu waybar wlogout grimblast
+sudo pacman -Syu fcitx5-im fcitx5-chinese-addons fcitx5-pinyin-zhwiki
+sudo pacman -Syu neovim-git nodejs npm tree-sitter-cli luarocks lua51 lazygit
+sudo pacman -Syu zathura zathura-pdf-mupdf
+sudo pacman -Syu keyd
+sudo pacman -Syu adw-gtk-theme
+echo "\n[archlinuxcn]\nServer = https://mirrors.aliyun.com/archlinuxcn/\\$arch" | sudo tee -a /etc/pacman.conf
+sudo pacman -Sy && sudo pacman -S archlinuxcn-keyring
+sudo pacman -Syu ttf-maplemononormal-nf-cn
+
+sudo cp -r ./chopsticks/rice/sddm/sddm.conf.d/ /etc/
+cp -r ./chopsticks/rice/hyprland/hypr/ .config/
+cp ./chopsticks/rice/vim/.vimrc ./
+sudo cp -r ./chopsticks/rice/keyd/keyd/ /etc
+cp -r ./chopsticks/rice/fuzzel/fuzzel/ ./.config/
+cp -r ./chopsticks/rice/waybar/waybar/ ./.config
+cp -r ./chopsticks/rice/wlogout/wlogout/ ./.config/
+cp -r ./chopsticks/rice/kitty/kitty/ .config/
+cp ./chopsticks/rice/fish/config.fish .config/fish/
+cp -r ./chopsticks/rice/zathura/zathura/ .config/
+cp -r ./chopsticks/rice/swaync/swaync/ .config/
+
+gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' && gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+sudo ufw allow 1714:1764/tcp comment "kde-connect"
+sudo ufw allow 1714:1764/udp comment "kde-connect"
+sudo ufw reload
+tldr --update
+sudo systemctl enable --now keyd
+sudo systemctl enable --now sddm
