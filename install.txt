@@ -26,6 +26,7 @@ cp -r ./chopsticks/rice/zathura/zathura/ .config/
 cp -r ./chopsticks/rice/swaync/swaync/ .config/
 
 gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' && gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+lookandfeeltool -a org.kde.breezedark.desktop
 sudo ufw allow 1714:1764/tcp comment "kde-connect"
 sudo ufw allow 1714:1764/udp comment "kde-connect"
 sudo ufw reload
